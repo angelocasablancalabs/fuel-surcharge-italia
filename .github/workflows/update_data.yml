@@ -1,0 +1,63 @@
+name: Aggiornamento Automatico Dati MASE
+
+on:
+  schedule:
+    # ⚡ 1. Anticipo flash pre-mezzogiorno:
+    # Estate (UTC+2): 09:53 UTC = 11:53 ora italiana
+    # Inverno (UTC+1): 10:53 UTC = 11:53 ora italiana
+    - cron: '53 9,10 * * 2'
+
+    # 🎯 2. Finestra Clou Martedì (scansioni frequenti 12:00 - 14:45 IT):
+    # Copre ore 10, 11 e 12 UTC (minuti scaglionati anti-congestione)
+    - cron: '8,23,38,53 10,11,12 * * 2'
+
+    # 🕒 3. Monitoraggio pomeridiano di recupero (se MASE pubblica in ritardo):
+    # Ore 14:18 e 16:18 UTC (= 16:18 e 18:18 CEST / 15:18 e 17:18 CET)
+    - cron: '18 14,16 * * 2'
+
+    # 🛡️ 4. Safety Fallback: mercoledì mattina alle ~09:18 IT se martedì era festivo
+    # Ore 07:18 e 08:18 UTC (= 09:18 CEST / 09:18 CET)
+    - cron: '18 7,8 * * 3'
+
+  # Consente l'avvio manuale immediato con 1 click
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-mase-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Scarica il repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: 🐍 Configura Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: ⚡ Esegui lo script di download MASE
+        run: |
+          python fetch_data.py
+
+      - name: 💾 Salva i dati se modificati
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Aggiunge il file all'area di staging se modificato
+          git add src/data/gasolio_mase.json
+          
+          # Verifica in modo pulito se ci sono modifiche effettive
+          if git diff --staged --quiet; then
+            echo "ℹ️ Nessun nuovo dato ministeriale rilevato: database già allineato."
+          else
+            git commit -m "chore(data): aggiornamento automatico prezzi gasolio MASE"
+            git pull --rebase origin main
+            git push origin main
+            echo "✅ Nuovi dati MASE registrati e inviati con successo!"
+          fi

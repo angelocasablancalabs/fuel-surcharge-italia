@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --font-titillium: "Titillium Web", sans-serif;
+}
+
+.font-titillium {
+  font-family: "Titillium Web", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
