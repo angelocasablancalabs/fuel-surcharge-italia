@@ -1,10 +1,10 @@
 {
   "metadata": {
     "source": "MASE - Ministero dell'Ambiente e della Sicurezza Energetica (DGSAIE)",
-    "last_updated": "2026-10-21T12:59:21+00:00",
+    "last_updated": "2026-10-27T15:34:32+00:00",
     "product": "Gasolio auto",
     "unit": "EUR/L",
-    "weekly_count": 1100,
+    "weekly_count": 1101,
     "monthly_count": 369,
     "annual_count": 30
   },
@@ -12742,6 +12742,14 @@
       "accisa": 0.6729,
       "iva": 0.4047,
       "data": "2026-10-19"
+    },
+    {
+      "prezzo_pompa": 2.2467,
+      "imponibile": 1.8416,
+      "netto": 1.1687,
+      "accisa": 0.6729,
+      "iva": 0.4051,
+      "data": "2026-10-26"
     }
   ]
 }
