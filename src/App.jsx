@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import rawData from './data/gasolio_mase.json';
 import { fmtIt, calculateSurcharge, priceBracket, isPriceInBracket, getWeekMeta, toISODateString, getProvisionalMonth, daysInMonth } from './utils/calculation';
 
@@ -55,23 +55,54 @@ const priceKeys = {
 };
 
 // Barra "calendario" a quadratini: un segmento per ogni giorno del mese, pieni i giorni coperti.
-// Altezza fissa (h-9) condivisa con lo spazio riservato nel box Settimanale per allineare i box.
-const DayProgressBar = ({ filled, total }) => (
-  <div className="h-9 flex flex-col justify-center">
-    <div className="flex gap-[2px]" role="img" aria-label={`${filled} giorni coperti su ${total}`}>
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={`h-2.5 flex-1 rounded-[2px] ${i < filled ? "bg-sky-500" : "bg-slate-200"}`}
-        />
-      ))}
+// Riga ad altezza fissa (h-4) condivisa con lo spazio riservato nel box Settimanale per allineare i box.
+// Larghezza dei segmenti calcolata in pixel fisici interi (devicePixelRatio): con flex-1 le larghezze
+// frazionarie venivano arrotondate in modo diverso (es. 27 segmenti da 8px e 4 da 7px).
+const DayProgressBar = ({ filled, total }) => {
+  const trackRef = useRef(null);
+  const [seg, setSeg] = useState(null); // { w, gap } in px CSS, allineati alla griglia dei pixel fisici
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const trackCss = el.getBoundingClientRect().width;
+      const trackDev = Math.floor(trackCss * dpr);
+      // Spazio ridotto a 1px quando la barra è stretta (es. tablet con 3 box affiancati)
+      const gapCss = trackCss / total < 6 ? 1 : 2;
+      const gapDev = Math.max(1, Math.round(gapCss * dpr));
+      const segDev = Math.max(1, Math.floor((trackDev - gapDev * (total - 1)) / total));
+      setSeg({ w: segDev / dpr, gap: gapDev / dpr });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [total]);
+
+  return (
+    <div className="h-4 flex items-center gap-2 mb-1.5" title={`Giorni coperti: ${filled} su ${total}`}>
+      <div ref={trackRef} className="flex-1 min-w-0">
+        <div
+          className="flex"
+          style={seg ? { gap: `${seg.gap}px` } : { gap: "2px" }}
+          role="img"
+          aria-label={`${filled} giorni coperti su ${total}`}
+        >
+          {Array.from({ length: total }, (_, i) => (
+            <span
+              key={i}
+              className={`h-2.5 rounded-[2px] ${seg ? "shrink-0" : "flex-1"} ${i < filled ? "bg-sky-800/75" : "bg-slate-200"}`}
+              style={seg ? { width: `${seg.w}px` } : undefined}
+            />
+          ))}
+        </div>
+      </div>
+      <span className="w-9 shrink-0 text-right text-[10.5px] font-semibold text-slate-600 tabular-nums">
+        {filled}/{total}
+      </span>
     </div>
-    <div className="flex justify-between text-[10.5px] text-slate-500 mt-1">
-      <span>Giorni coperti</span>
-      <span className="font-semibold text-slate-600">{filled} / {total}</span>
-    </div>
-  </div>
-);
+  );
+};
 
 // Interpreta un importo digitato in formato italiano ("2,100" / "2.100" / "2.1") -> numero
 const parseItAmount = (raw) => {
@@ -811,6 +842,7 @@ export default function App() {
                   <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
                     MENSILE CONSOLIDATO
                   </div>
+                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} />
                   <div className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
                     <span>{liveData.monthTitle}</span>
                     <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -820,7 +852,6 @@ export default function App() {
                   }`}>
                     {fmtIt(liveData.monthSurcharge, 2, true)} %
                   </div>
-                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} />
                 </div>
                 <div className="pt-3 border-t border-sky-200 text-xs text-slate-600 space-y-1">
                   <div className="flex justify-between">
@@ -844,6 +875,11 @@ export default function App() {
                   <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
                     MENSILE PROVVISORIO
                   </div>
+                  {liveData.hasProvisional ? (
+                    <DayProgressBar filled={liveData.provCoveredDays} total={liveData.provTotalDays} />
+                  ) : (
+                    <div className="h-4 mb-1.5" aria-hidden="true"></div>
+                  )}
                   <div className="text-sm font-semibold text-slate-900">
                     {liveData.hasProvisional ? (
                       <><span className="whitespace-nowrap">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> ({liveData.provCount} rilevazioni)</>
@@ -857,11 +893,6 @@ export default function App() {
                     <div className="text-2xl font-bold text-slate-400 my-4">
                       —
                     </div>
-                  )}
-                  {liveData.hasProvisional ? (
-                    <DayProgressBar filled={liveData.provCoveredDays} total={liveData.provTotalDays} />
-                  ) : (
-                    <div className="h-9" aria-hidden="true"></div>
                   )}
                 </div>
                 <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
@@ -891,14 +922,14 @@ export default function App() {
                   <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
                     SETTIMANALE
                   </div>
+                  {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
+                  <div className="h-4 mb-1.5" aria-hidden="true"></div>
                   <div className="text-sm font-semibold text-slate-900">
                     {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
                   </div>
                   <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
                     {fmtIt(liveData.weekSurcharge, 2, true)} %
                   </div>
-                  {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
-                  <div className="h-9" aria-hidden="true"></div>
                 </div>
                 <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
                   <div className="flex justify-between">
