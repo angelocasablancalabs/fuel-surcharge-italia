@@ -67,42 +67,48 @@ const DayProgressBar = ({ filled, total }) => {
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const dpr = window.devicePixelRatio || 1;
-      const trackCss = el.getBoundingClientRect().width;
+      // Spazio disponibile per la barra = riga intera meno l'ingombro riservato alla frazione (es. "31/31")
+      const trackCss = Math.max(0, el.getBoundingClientRect().width - FRACTION_RESERVE_PX);
       const trackDev = Math.floor(trackCss * dpr);
+      // Dimensione calcolata sempre su 31 giorni: il quadratino è identico in tutti i box
+      // e un mese da 30 giorni risulta semplicemente un quadratino più corto.
+      const slots = 31;
       // Spazio ridotto a 1px quando la barra è stretta (es. tablet con 3 box affiancati)
-      const gapCss = trackCss / total < 6 ? 1 : 2;
+      const gapCss = trackCss / slots < 6 ? 1 : 2;
       const gapDev = Math.max(1, Math.round(gapCss * dpr));
-      const segDev = Math.max(1, Math.floor((trackDev - gapDev * (total - 1)) / total));
+      const segDev = Math.max(1, Math.floor((trackDev - gapDev * (slots - 1)) / slots));
       setSeg({ w: segDev / dpr, gap: gapDev / dpr });
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [total]);
+  }, []);
 
   return (
-    <div className="h-4 flex items-center gap-2 mb-1.5" title={`Giorni coperti: ${filled} su ${total}`}>
-      <div ref={trackRef} className="flex-1 min-w-0">
-        <div
-          className="flex"
-          style={seg ? { gap: `${seg.gap}px` } : { gap: "2px" }}
-          role="img"
-          aria-label={`${filled} giorni coperti su ${total}`}
-        >
-          {Array.from({ length: total }, (_, i) => (
-            <span
-              key={i}
-              className={`h-2.5 rounded-[2px] ${seg ? "shrink-0" : "flex-1"} ${i < filled ? "bg-sky-800/75" : "bg-slate-200"}`}
-              style={seg ? { width: `${seg.w}px` } : undefined}
-            />
-          ))}
-        </div>
+    <div ref={trackRef} className="h-4 flex items-center gap-2 mb-1.5" title={`Giorni coperti: ${filled} su ${total}`}>
+      <div
+        className={`flex ${seg ? "" : "flex-1"}`}
+        style={seg ? { gap: `${seg.gap}px` } : { gap: "2px" }}
+        role="img"
+        aria-label={`${filled} giorni coperti su ${total}`}
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className={`h-2.5 rounded-[2px] ${seg ? "shrink-0" : "flex-1"} ${i < filled ? "bg-sky-800/75" : "bg-slate-200"}`}
+            style={seg ? { width: `${seg.w}px` } : undefined}
+          />
+        ))}
       </div>
-      <span className="w-9 shrink-0 text-right text-[10.5px] font-semibold text-slate-600 tabular-nums">
+      {/* Frazione subito a seguire della barra */}
+      <span className="shrink-0 text-[10.5px] font-semibold text-slate-400 tabular-nums">
         {filled}/{total}
       </span>
     </div>
   );
 };
+
+// Ingombro riservato alla frazione accanto alla barra: larghezza di "31/31" (~28px) + gap-2 (8px)
+const FRACTION_RESERVE_PX = 36;
 
 // Interpreta un importo digitato in formato italiano ("2,100" / "2.100" / "2.1") -> numero
 const parseItAmount = (raw) => {
