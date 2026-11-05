@@ -21,7 +21,7 @@ Questo documento traccia l'evoluzione del progetto, fungendo da ponte di contest
   - Validazione matematica di quadratura: verifica che $P_{\text{pompa}} \approx P_{\text{netto}} + P_{\text{accisa}} + P_{\text{iva}}$.
   - Scrittura atomica del dataset locale in `src/data/gasolio_mase.json`.
 - **CI/CD & Hosting:**
-  - `update_data.yml`: Workflow GitHub Actions programmato per il martedì con tentativi scaglionati (09:53–16:18 UTC) e recupero il mercoledì mattina, per aggiornare il JSON e committare su `main`.
+  - `update_data.yml`: Workflow GitHub Actions programmato per il martedì con tentativi scaglionati (08:08–16:18 UTC, ogni 15 min fino alle 12:53 UTC) e recupero il mercoledì mattina, per aggiornare il JSON e committare su `main`.
   - `deploy.yml`: Workflow di build Vite e pubblicazione automatica su GitHub Pages.
 
 ---
@@ -215,3 +215,7 @@ Questo documento traccia l'evoluzione del progetto, fungendo da ponte di contest
     - **Scope deliberatamente limitato:** i select *Modalità Periodo Target* (Laboratorio, `labTargetMode`) e *Criterio di Ricerca* (Archivio MASE, `lookupMode`) usano gli stessi `value` ma sono **campi diversi** e non rientrano nella richiesta: lasciati invariati.
     - **Nota di manutenzione:** eventuali nuove opzioni o refactoring futuri devono continuare a far corrispondere `value` e stringa di stato; le etichette sono ora disaccoppiate dal valore e possono essere riviste senza toccare il calcolo.
     - **Verifica:** `npm run build` exit code 0 (1824 moduli, 2.15 s); ispezione diretta delle righe 695-697 del sorgente per confermare i nuovi label a fronte dei `value` originali.
+  - **Anticipo Polling MASE e Nuovi Default di Avvio (5 Novembre 2026):**
+    - **Action `update_data.yml` (solo blocco `schedule`):** i cron GitHub sono in UTC fisso, quindi in ora solare la finestra fitta partiva alle 11:08 IT e in ora legale alle 12:08 IT. Il MASE invece pubblica spesso già verso le 11:00. La finestra del martedì (ogni 15 min) è stata **allargata all'indietro di 2h**, `8,23,38,53 8-12 UTC`: 09:08–13:53 IT in ora solare, 10:08–14:53 IT in ora legale. Così si anticipa senza scoprire la fascia di mezzogiorno. Lo slot "flash" `53 9,10` è stato rimosso perché ora è contenuto nella finestra. Recupero pomeridiano e fallback del mercoledì restano invariati; corretti i commenti con gli orari reali per entrambe le stagioni. Limite noto: lo scheduler GitHub è *best effort* e i run possono partire con ritardi anche di ore (lo si vede dai commit del bot del 3/11).
+    - **Default di avvio (`src/App.jsx`):** Incidenza **33%** (resta valido l'override `?weight=`), Modalità **Media Mensile**, Baseline **Dicembre 2025 fissa**. `defaultTargetMonthIdx` cerca prima il record 2025/12 e solo in mancanza ricade sull'ultimo dicembre consolidato. Il **Laboratorio** parte anch'esso da Media Mensile / Dicembre 2025 (`labTargetMode`, `labTargetMonthIdx`). Allineati i testi della nota metodologica (default 33%, configurazione all'avvio) e del `README.md`.
+    - **Verifica:** `npm run build` exit 0; `npm run lint` 0 errori (resta il warning preesistente a riga 154). Prova nel browser: avvio senza parametri → 33% / Media Mensile / Dicembre 2025 sia nel pannello principale sia nel Laboratorio; `?weight=40` resta a 40%; passando da Media Annuale a Media Mensile si torna su Dicembre 2025.

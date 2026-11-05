@@ -43,7 +43,7 @@ I calcoli seguono gli standard d'esercizio per l'autotrasporto (MIT / associazio
    $$\Delta\% = \left(\frac{P_{\text{rilevato}} - P_{\text{baseline}}}{P_{\text{baseline}}}\right) \times 100$$
 2. **Fuel Surcharge Ponderato (%):**
    $$\text{Fuel Surcharge \%} = \Delta\% \times \left(\frac{\text{Incidenza \%}}{100}\right)$$
-   *(Incidenza predefinita: 30%, personalizzabile da 1% a 100%).*
+   *(Incidenza predefinita: 33%, personalizzabile da 1% a 100%).*
 
 ---
 

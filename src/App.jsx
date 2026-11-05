@@ -95,17 +95,20 @@ export default function App() {
   
   const [fuelWeight, setFuelWeight] = useState(() => {
     const w = parseInt(new URLSearchParams(window.location.search).get("weight"), 10);
-    return !isNaN(w) && w >= 1 && w <= 100 ? w : 30;
+    return !isNaN(w) && w >= 1 && w <= 100 ? w : 33;
   });
 
   // Periodo Target (Base)
-  const [targetMode, setTargetMode] = useState("Anno solare"); // "Anno solare", "Singolo Mese", "Range personalizzato"
+  const [targetMode, setTargetMode] = useState("Singolo Mese"); // "Anno solare", "Singolo Mese", "Range personalizzato"
   const [selYear, setSelYear] = useState("2025");
 
-  // Calcolo indice di default per "Singolo Mese": Dicembre dell'ultimo anno solare consolidato
+  // Calcolo indice di default per "Singolo Mese": Dicembre 2025 (baseline fissa),
+  // in fallback Dicembre dell'ultimo anno solare consolidato
   const defaultTargetMonthIdx = useMemo(() => {
     if (!monthlyList.length) return 0;
     const reversedMonthly = [...monthlyList].reverse();
+    const fixedIdx = reversedMonthly.findIndex((m) => m.anno === 2025 && m.mese === 12);
+    if (fixedIdx !== -1) return fixedIdx;
     const annualYears = Object.keys(annualDict).map(Number).filter((y) => !isNaN(y));
     const maxConsolidatedYear = annualYears.length > 0 ? Math.max(...annualYears) : 2025;
     const decIdx = reversedMonthly.findIndex((m) => m.anno === maxConsolidatedYear && m.mese === 12);
@@ -159,9 +162,9 @@ export default function App() {
   const [labWeight, setLabWeight] = useState(() => fuelWeight);
 
   // Colonna 1: Base di Partenza (Target)
-  const [labTargetMode, setLabTargetMode] = useState("Anno solare"); // "Anno solare", "Singolo Mese", "Range personalizzato", "Valore Libero"
+  const [labTargetMode, setLabTargetMode] = useState("Singolo Mese"); // "Anno solare", "Singolo Mese", "Range personalizzato", "Valore Libero"
   const [labTargetYear, setLabTargetYear] = useState("2025");
-  const [labTargetMonthIdx, setLabTargetMonthIdx] = useState(0);
+  const [labTargetMonthIdx, setLabTargetMonthIdx] = useState(defaultTargetMonthIdx);
   const [labTargetStartDate, setLabTargetStartDate] = useState("2025-01-01");
   const [labTargetEndDate, setLabTargetEndDate] = useState("2025-12-31");
   const [labCustomBasePrice, setLabCustomBasePrice] = useState(1.650);
@@ -1679,7 +1682,7 @@ export default function App() {
                 <b>Variazione Prezzo Gasolio (Δ%):</b> Calcola lo scostamento tra prezzo rilevato e prezzo baseline: <code className="bg-slate-100 px-1 py-0.5 rounded">Δ% = ((P_attuale - P_baseline) / P_baseline) × 100</code>
               </li>
               <li>
-                <b>Incidenza Costo Gasolio (%):</b> Il Fuel Surcharge finale è ottenuto moltiplicando la variazione per l'incidenza pattuita (default 30%, tabelle indicative costi MIT).
+                <b>Incidenza Costo Gasolio (%):</b> Il Fuel Surcharge finale è ottenuto moltiplicando la variazione per l'incidenza pattuita (default 33%, tabelle indicative costi MIT).
               </li>
               <li>
                 <b>Matrice a Scaglioni (Step 0,50%):</b> Ogni scaglione tariffario copre una fascia centrata di ±0,25%, calcolata tramite formula inversa dal Prezzo Baseline. Le fasce sono discrete a scatti di 0,001 € (millesimo): l'estremo inferiore riparte da +0,001 € rispetto all'estremo superiore dello scaglione precedente, quindi il prezzo di confine appartiene sempre alla fascia inferiore.
@@ -1697,7 +1700,7 @@ export default function App() {
             </h5>
             <ul className="space-y-2 list-disc list-inside text-slate-600">
               <li>
-                <b>Configurazione all'Avvio:</b> Pre-impostata su <i>Prezzo Globale (alla pompa)</i>, <i>Incidenza 30%</i> e <i>Baseline Media Anno 2025</i>.
+                <b>Configurazione all'Avvio:</b> Pre-impostata su <i>Prezzo Globale (alla pompa)</i>, <i>Incidenza 33%</i> e <i>Baseline Media Mensile Dicembre 2025</i>.
               </li>
               <li>
                 <b>Link Condivisibili (URL Query):</b> Qualsiasi parametro impostato viene sincronizzato nell'URL del browser per poter condividere preventivi pre-configurati.
