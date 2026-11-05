@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import rawData from './data/gasolio_mase.json';
-import { fmtIt, calculateSurcharge, priceBracket, isPriceInBracket, getWeekMeta, toISODateString, getProvisionalMonth } from './utils/calculation';
+import { fmtIt, calculateSurcharge, priceBracket, isPriceInBracket, getWeekMeta, toISODateString, getProvisionalMonth, daysInMonth } from './utils/calculation';
 
 // Componente Plotly ottimizzato per Vite
 import Plotly from 'plotly.js-dist-min';
@@ -53,6 +53,25 @@ const priceKeys = {
   imponibile: "imponibile",
   netto: "netto"
 };
+
+// Barra "calendario" a quadratini: un segmento per ogni giorno del mese, pieni i giorni coperti.
+// Altezza fissa (h-9) condivisa con lo spazio riservato nel box Settimanale per allineare i box.
+const DayProgressBar = ({ filled, total }) => (
+  <div className="h-9 flex flex-col justify-center">
+    <div className="flex gap-[2px]" role="img" aria-label={`${filled} giorni coperti su ${total}`}>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={`h-2.5 flex-1 rounded-[2px] ${i < filled ? "bg-sky-500" : "bg-slate-200"}`}
+        />
+      ))}
+    </div>
+    <div className="flex justify-between text-[10.5px] text-slate-500 mt-1">
+      <span>Giorni coperti</span>
+      <span className="font-semibold text-slate-600">{filled} / {total}</span>
+    </div>
+  </div>
+);
 
 // Interpreta un importo digitato in formato italiano ("2,100" / "2.100" / "2.1") -> numero
 const parseItAmount = (raw) => {
@@ -267,11 +286,13 @@ export default function App() {
     let monthTitle = "N/D";
     let monthDelta = 0;
     let monthSurcharge = 0;
+    let monthDays = 0;
 
     if (monthlyList.length > 0) {
       const lastM = monthlyList[monthlyList.length - 1];
       monthPrice = lastM[activeKey] || 0;
       monthTitle = `${lastM.nome_mese} ${lastM.anno}`;
+      monthDays = daysInMonth(lastM.anno, lastM.mese);
       const res = calculateSurcharge(targetPrice, monthPrice, fuelWeight);
       monthDelta = res.deltaPct;
       monthSurcharge = res.surchargePct;
@@ -284,11 +305,15 @@ export default function App() {
     let provCount = 0;
     let provDelta = 0;
     let provSurcharge = 0;
+    let provCoveredDays = 0;
+    let provTotalDays = 0;
 
     const provisional = getProvisionalMonth(weeklyList, monthlyList, activeKey);
     if (provisional) {
       hasProvisional = true;
       provCount = provisional.count;
+      provCoveredDays = provisional.coveredDays;
+      provTotalDays = provisional.totalDays;
       provTitle = provisional.title;
       provPrice = provisional.price;
       const res = calculateSurcharge(targetPrice, provPrice, fuelWeight);
@@ -327,12 +352,15 @@ export default function App() {
       monthTitle,
       monthDelta,
       monthSurcharge,
+      monthDays,
       hasProvisional,
       provPrice,
       provTitle,
       provCount,
       provDelta,
       provSurcharge,
+      provCoveredDays,
+      provTotalDays,
       weekPrice,
       weekTitle,
       weekSub,
@@ -792,6 +820,7 @@ export default function App() {
                   }`}>
                     {fmtIt(liveData.monthSurcharge, 2, true)} %
                   </div>
+                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} />
                 </div>
                 <div className="pt-3 border-t border-sky-200 text-xs text-slate-600 space-y-1">
                   <div className="flex justify-between">
@@ -809,33 +838,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 2. Ultima Settimana Consolidata */}
-              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs h-full flex flex-col justify-between">
-                <div>
-                  <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
-                    SETTIMANALE
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
-                  </div>
-                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
-                    {fmtIt(liveData.weekSurcharge, 2, true)} %
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Prezzo Medio:</span>
-                    <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekPrice, 3)} €/L</b>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Variazione Prezzo (Δ):</span>
-                    <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekDelta, 2, true)}%</b>
-                  </div>
-                  <div className="min-h-[2rem] pt-1" aria-hidden="true"></div>
-                </div>
-              </div>
-
-              {/* 3. Mese in Corso (Stima Provvisoria) */}
+              {/* 2. Mese in Corso (Stima Provvisoria) */}
               <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs h-full flex flex-col justify-between">
                 <div>
                   <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
@@ -854,6 +857,11 @@ export default function App() {
                     <div className="text-2xl font-bold text-slate-400 my-4">
                       —
                     </div>
+                  )}
+                  {liveData.hasProvisional ? (
+                    <DayProgressBar filled={liveData.provCoveredDays} total={liveData.provTotalDays} />
+                  ) : (
+                    <div className="h-9" aria-hidden="true"></div>
                   )}
                 </div>
                 <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
@@ -874,6 +882,34 @@ export default function App() {
                       Tutte le settimane del mese sono già state consolidate.
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* 3. Ultima Settimana Consolidata */}
+              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs h-full flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
+                    SETTIMANALE
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
+                  </div>
+                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
+                    {fmtIt(liveData.weekSurcharge, 2, true)} %
+                  </div>
+                  {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
+                  <div className="h-9" aria-hidden="true"></div>
+                </div>
+                <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Prezzo Medio:</span>
+                    <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekPrice, 3)} €/L</b>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Variazione Prezzo (Δ):</span>
+                    <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekDelta, 2, true)}%</b>
+                  </div>
+                  <div className="min-h-[2rem] pt-1" aria-hidden="true"></div>
                 </div>
               </div>
 
@@ -929,10 +965,6 @@ export default function App() {
                       <div className="text-[11px] font-semibold text-slate-600">{liveData.monthTitle}</div>
                     </th>
                     <th className="py-1 px-3 text-center align-top border-r border-slate-200/60 w-1/5 bg-slate-50">
-                      <div>SETTIMANALE</div>
-                      <div className="text-[11px] font-semibold text-slate-600">{liveData.weekTitle}</div>
-                    </th>
-                    <th className="py-1 px-3 text-center align-top w-1/5 bg-slate-50">
                       <div>MENSILE PROVVISORIO</div>
                       <div className="text-[11px] font-semibold text-slate-600">
                         {liveData.hasProvisional ? (
@@ -941,6 +973,10 @@ export default function App() {
                           "—"
                         )}
                       </div>
+                    </th>
+                    <th className="py-1 px-3 text-center align-top w-1/5 bg-slate-50">
+                      <div>SETTIMANALE</div>
+                      <div className="text-[11px] font-semibold text-slate-600">{liveData.weekTitle}</div>
                     </th>
                   </tr>
                 </thead>
@@ -968,16 +1004,16 @@ export default function App() {
                         ) : null}
                       </td>
                       <td className="py-1.5 px-3 text-center border-r border-slate-100">
-                        {row.matchWeek ? (
+                        {row.matchProv ? (
                           <span className="font-bold text-slate-900 inline-flex items-center gap-1">
-                            <span className="text-slate-400 font-normal">←</span> {fmtIt(liveData.weekPrice, 3)} €/L
+                            <span className="text-slate-400 font-normal">←</span> {fmtIt(liveData.provPrice, 3)} €/L
                           </span>
                         ) : null}
                       </td>
                       <td className="py-1.5 px-3 text-center">
-                        {row.matchProv ? (
+                        {row.matchWeek ? (
                           <span className="font-bold text-slate-900 inline-flex items-center gap-1">
-                            <span className="text-slate-400 font-normal">←</span> {fmtIt(liveData.provPrice, 3)} €/L
+                            <span className="text-slate-400 font-normal">←</span> {fmtIt(liveData.weekPrice, 3)} €/L
                           </span>
                         ) : null}
                       </td>

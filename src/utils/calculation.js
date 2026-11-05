@@ -137,5 +137,24 @@ export function getProvisionalMonth(weeklyList, monthlyList, key) {
   ];
   const price = weeks.reduce((acc, w) => acc + (w[key] || 0), 0) / weeks.length;
 
-  return { price, title: `${monthNames[month - 1]} ${year}`, count: weeks.length };
+  // Giorni del mese effettivamente osservati: fino alla domenica di chiusura dell'ultima settimana
+  // (es. rilevazione del 02/11 = settimana 26/10-01/11 → 1 giorno di novembre coperto)
+  const lastObsEnd = getWeekMeta(weeks[weeks.length - 1].data).obsEnd;
+  const coveredDays =
+    lastObsEnd && lastObsEnd.getFullYear() === year && lastObsEnd.getMonth() + 1 === month
+      ? lastObsEnd.getDate()
+      : 0;
+
+  return {
+    price,
+    title: `${monthNames[month - 1]} ${year}`,
+    count: weeks.length,
+    coveredDays,
+    totalDays: daysInMonth(year, month)
+  };
+}
+
+// Numero di giorni del mese (month 1-12)
+export function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
 }
