@@ -58,7 +58,9 @@ const priceKeys = {
 // Riga ad altezza fissa (h-4) condivisa con lo spazio riservato nel box Settimanale per allineare i box.
 // Larghezza dei segmenti calcolata in pixel fisici interi (devicePixelRatio): con flex-1 le larghezze
 // frazionarie venivano arrotondate in modo diverso (es. 27 segmenti da 8px e 4 da 7px).
-const DayProgressBar = ({ filled, total }) => {
+// showFraction=false nasconde il testo "N/M" (es. mese consolidato, sempre pieno) mantenendo
+// lo stesso ingombro di calcolo, così i quadratini restano identici tra i box.
+const DayProgressBar = ({ filled, total, showFraction = true }) => {
   const trackRef = useRef(null);
   const [seg, setSeg] = useState(null); // { w, gap } in px CSS, allineati alla griglia dei pixel fisici
 
@@ -100,9 +102,11 @@ const DayProgressBar = ({ filled, total }) => {
         ))}
       </div>
       {/* Frazione subito a seguire della barra */}
-      <span className="shrink-0 text-[10.5px] font-semibold text-slate-400 tabular-nums">
-        {filled}/{total}
-      </span>
+      {showFraction && (
+        <span className="shrink-0 text-[10.5px] font-semibold text-slate-400 tabular-nums">
+          {filled}/{total}
+        </span>
+      )}
     </div>
   );
 };
@@ -848,7 +852,7 @@ export default function App() {
                   <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
                     MENSILE CONSOLIDATO
                   </div>
-                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} />
+                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} showFraction={false} />
                   <div className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
                     <span>{liveData.monthTitle}</span>
                     <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
