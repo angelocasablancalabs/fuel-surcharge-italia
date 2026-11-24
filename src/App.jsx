@@ -844,26 +844,30 @@ export default function App() {
             </div>
 
             {/* I 3 CARD OPERATIVI */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-              
+            {/* Da md in su i 3 box condividono 6 righe della griglia (subgrid): titolo, barra, periodo,
+                nota, percentuale, piè di box. La riga "nota" prende l'altezza del box consolidato e
+                resta vuota negli altri due, così le percentuali stanno sempre sulla stessa linea. */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-y-0 mt-5">
+
               {/* 1. Ultimo Mese Consolidato */}
-              <div className="bg-sky-50/60 text-slate-900 rounded-2xl p-5 border border-sky-200 shadow-xs h-full flex flex-col justify-between">
-                <div>
-                  <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
-                    MENSILE CONSOLIDATO
-                  </div>
-                  <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} showFraction={false} />
-                  <div className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
-                    <span>{liveData.monthTitle}</span>
-                    <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                  </div>
-                  <div className={`text-3xl md:text-4xl font-black tracking-tight my-2.5 ${
-                    liveData.monthSurcharge > 0.0001 ? 'text-red-700' : 'text-slate-900'
-                  }`}>
-                    {fmtIt(liveData.monthSurcharge, 2, true)} %
-                  </div>
+              <div className="bg-sky-50/60 text-slate-900 rounded-2xl p-5 border border-sky-200 shadow-xs flex flex-col md:grid md:grid-rows-subgrid md:row-span-6 md:gap-y-0">
+                <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
+                  MENSILE CONSOLIDATO
                 </div>
-                <div className="pt-3 border-t border-sky-200 text-xs text-slate-600 space-y-1">
+                <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} showFraction={false} />
+                <div className="text-sm font-semibold text-slate-900">
+                  {liveData.monthTitle}
+                </div>
+                <div className="text-xs text-slate-900 mt-1 flex items-start gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                  <span className="font-bold">convenzionalmente valido per la fatturazione del mese successivo</span>
+                </div>
+                <div className={`text-3xl md:text-4xl font-black tracking-tight my-2.5 ${
+                  liveData.monthSurcharge > 0.0001 ? 'text-red-700' : 'text-slate-900'
+                }`}>
+                  {fmtIt(liveData.monthSurcharge, 2, true)} %
+                </div>
+                <div className="mt-auto pt-3 border-t border-sky-200 text-xs text-slate-600 space-y-1">
                   <div className="flex justify-between">
                     <span>Prezzo Medio:</span>
                     <b className="text-slate-600 font-semibold">{fmtIt(liveData.monthPrice, 3)} €/L</b>
@@ -872,40 +876,36 @@ export default function App() {
                     <span>Variazione Prezzo (Δ):</span>
                     <b className="text-slate-600 font-semibold">{fmtIt(liveData.monthDelta, 2, true)}%</b>
                   </div>
-                  <div className="text-xs text-slate-900 pt-1 flex items-start gap-1.5 min-h-[2rem]">
-                    <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                    <span className="font-bold">convenzionalmente valido per la fatturazione del mese successivo</span>
-                  </div>
                 </div>
               </div>
 
               {/* 2. Mese in Corso (Stima Provvisoria) */}
-              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs h-full flex flex-col justify-between">
-                <div>
-                  <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
-                    MENSILE PROVVISORIO
-                  </div>
-                  {liveData.hasProvisional ? (
-                    <DayProgressBar filled={liveData.provCoveredDays} total={liveData.provTotalDays} />
-                  ) : (
-                    <div className="h-4 mb-1.5" aria-hidden="true"></div>
-                  )}
-                  <div className="text-sm font-semibold text-slate-900">
-                    {liveData.hasProvisional ? (
-                      <><span className="whitespace-nowrap">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> ({liveData.provCount} rilevazioni)</>
-                    ) : "Nessun dato provvisorio"}
-                  </div>
-                  {liveData.hasProvisional ? (
-                    <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
-                      {fmtIt(liveData.provSurcharge, 2, true)} %
-                    </div>
-                  ) : (
-                    <div className="text-2xl font-bold text-slate-400 my-4">
-                      —
-                    </div>
-                  )}
+              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:grid md:grid-rows-subgrid md:row-span-6 md:gap-y-0">
+                <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
+                  MENSILE PROVVISORIO
                 </div>
-                <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+                {liveData.hasProvisional ? (
+                  <DayProgressBar filled={liveData.provCoveredDays} total={liveData.provTotalDays} />
+                ) : (
+                  <div className="h-4 mb-1.5" aria-hidden="true"></div>
+                )}
+                <div className="text-sm font-semibold text-slate-900">
+                  {liveData.hasProvisional ? (
+                    <><span className="whitespace-nowrap">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> ({liveData.provCount} rilevazioni)</>
+                  ) : "Nessun dato provvisorio"}
+                </div>
+                {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
+                <div aria-hidden="true"></div>
+                {liveData.hasProvisional ? (
+                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
+                    {fmtIt(liveData.provSurcharge, 2, true)} %
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-slate-400 my-4">
+                    —
+                  </div>
+                )}
+                <div className="mt-auto pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
                   {liveData.hasProvisional ? (
                     <>
                       <div className="flex justify-between">
@@ -916,10 +916,9 @@ export default function App() {
                         <span>Variazione Prezzo (Δ):</span>
                         <b className="text-slate-600 font-semibold">{fmtIt(liveData.provDelta, 2, true)}%</b>
                       </div>
-                      <div className="min-h-[2rem] pt-1" aria-hidden="true"></div>
                     </>
                   ) : (
-                    <div className="text-[11px] text-slate-500 min-h-[2rem] pt-1 flex items-center">
+                    <div className="text-[11px] text-slate-500 flex items-center">
                       Tutte le settimane del mese sono già state consolidate.
                     </div>
                   )}
@@ -927,21 +926,21 @@ export default function App() {
               </div>
 
               {/* 3. Ultima Settimana Consolidata */}
-              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs h-full flex flex-col justify-between">
-                <div>
-                  <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
-                    SETTIMANALE
-                  </div>
-                  {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
-                  <div className="h-4 mb-1.5" aria-hidden="true"></div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
-                  </div>
-                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
-                    {fmtIt(liveData.weekSurcharge, 2, true)} %
-                  </div>
+              <div className="bg-white text-slate-900 rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:grid md:grid-rows-subgrid md:row-span-6 md:gap-y-0">
+                <div className="text-xs font-bold tracking-wider text-slate-700 uppercase mb-1.5">
+                  SETTIMANALE
                 </div>
-                <div className="pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
+                {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
+                <div className="h-4 mb-1.5" aria-hidden="true"></div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
+                </div>
+                {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
+                <div aria-hidden="true"></div>
+                <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
+                  {fmtIt(liveData.weekSurcharge, 2, true)} %
+                </div>
+                <div className="mt-auto pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
                   <div className="flex justify-between">
                     <span>Prezzo Medio:</span>
                     <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekPrice, 3)} €/L</b>
@@ -950,7 +949,6 @@ export default function App() {
                     <span>Variazione Prezzo (Δ):</span>
                     <b className="text-slate-600 font-semibold">{fmtIt(liveData.weekDelta, 2, true)}%</b>
                   </div>
-                  <div className="min-h-[2rem] pt-1" aria-hidden="true"></div>
                 </div>
               </div>
 
