@@ -889,7 +889,7 @@ export default function App() {
                 ) : (
                   <div className="h-4 mb-1.5" aria-hidden="true"></div>
                 )}
-                <div className="text-sm font-semibold text-slate-900 leading-6">
+                <div className="text-sm font-semibold text-slate-600 leading-6">
                   {liveData.hasProvisional ? (
                     <><span className="whitespace-nowrap font-period font-bold text-lg">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> <span className="font-normal text-slate-500">({liveData.provCount} rilevazioni)</span></>
                   ) : "Nessun dato provvisorio"}
@@ -897,7 +897,7 @@ export default function App() {
                 {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
                 <div aria-hidden="true"></div>
                 {liveData.hasProvisional ? (
-                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
+                  <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-600">
                     {fmtIt(liveData.provSurcharge, 2, true)} %
                   </div>
                 ) : (
@@ -932,12 +932,12 @@ export default function App() {
                 </div>
                 {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
                 <div className="h-4 mb-1.5" aria-hidden="true"></div>
-                <div className="text-sm text-slate-900 leading-6">
+                <div className="text-sm text-slate-600 leading-6">
                   <span className="font-period font-bold text-lg">{liveData.weekTitle}</span>{liveData.weekSub && <span className="text-slate-500"> ({liveData.weekSub})</span>}
                 </div>
                 {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
                 <div aria-hidden="true"></div>
-                <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-900">
+                <div className="text-3xl md:text-4xl font-black tracking-tight my-2.5 text-slate-600">
                   {fmtIt(liveData.weekSurcharge, 2, true)} %
                 </div>
                 <div className="mt-auto pt-3 border-t border-slate-200 text-xs text-slate-600 space-y-1">
