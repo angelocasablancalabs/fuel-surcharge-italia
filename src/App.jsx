@@ -96,7 +96,7 @@ const DayProgressBar = ({ filled, total, showFraction = true }) => {
         {Array.from({ length: total }, (_, i) => (
           <span
             key={i}
-            className={`h-2.5 rounded-[2px] ${seg ? "shrink-0" : "flex-1"} ${i < filled ? "bg-sky-800/75" : "bg-slate-200"}`}
+            className={`h-2.5 rounded-[2px] ${seg ? "shrink-0" : "flex-1"} ${i < filled ? "bg-slate-500" : "bg-slate-200"}`}
             style={seg ? { width: `${seg.w}px` } : undefined}
           />
         ))}
