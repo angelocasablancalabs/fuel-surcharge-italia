@@ -2,6 +2,8 @@
 
 @theme {
   --font-titillium: "Titillium Web", sans-serif;
+  /* Periodo di riferimento nei 3 box KPI (mese / settimana): classe font-period */
+  --font-period: "Roboto Condensed", "Titillium Web", sans-serif;
 }
 
 .font-titillium {

@@ -855,7 +855,7 @@ export default function App() {
                   MENSILE CONSOLIDATO
                 </div>
                 <DayProgressBar filled={liveData.monthDays} total={liveData.monthDays} showFraction={false} />
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="font-period font-bold text-lg leading-6 text-slate-900">
                   {liveData.monthTitle}
                 </div>
                 <div className="text-xs text-slate-900 mt-1 flex items-start gap-1.5">
@@ -889,9 +889,9 @@ export default function App() {
                 ) : (
                   <div className="h-4 mb-1.5" aria-hidden="true"></div>
                 )}
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="text-sm font-semibold text-slate-900 leading-6">
                   {liveData.hasProvisional ? (
-                    <><span className="whitespace-nowrap">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> ({liveData.provCount} rilevazioni)</>
+                    <><span className="whitespace-nowrap font-period font-bold text-lg">{liveData.provTitle} <Hourglass className="inline-block w-3.5 h-3.5 text-slate-400 align-[-2px]" /></span> <span className="font-normal text-slate-500">({liveData.provCount} rilevazioni)</span></>
                   ) : "Nessun dato provvisorio"}
                 </div>
                 {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
@@ -932,8 +932,8 @@ export default function App() {
                 </div>
                 {/* Spazio equivalente alla barra dei giorni dei box mensili (allineamento visivo) */}
                 <div className="h-4 mb-1.5" aria-hidden="true"></div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {liveData.weekTitle} {liveData.weekSub && `(${liveData.weekSub})`}
+                <div className="text-sm text-slate-900 leading-6">
+                  <span className="font-period font-bold text-lg">{liveData.weekTitle}</span>{liveData.weekSub && <span className="text-slate-500"> ({liveData.weekSub})</span>}
                 </div>
                 {/* Riga "nota" della subgrid: vuota, allinea la percentuale a quella del box consolidato */}
                 <div aria-hidden="true"></div>
