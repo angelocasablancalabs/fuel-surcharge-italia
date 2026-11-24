@@ -90,6 +90,21 @@ def ensure_unique(rows: list[dict], fields: tuple[str, ...], label: str) -> None
         raise DataValidationError(f"Il MASE ha restituito {label} duplicati.")
 
 
+def without_timestamp(data: dict) -> dict:
+    """Copia dei dati senza `metadata.last_updated`, per confrontare solo il contenuto reale."""
+    metadata = {key: value for key, value in data.get("metadata", {}).items() if key != "last_updated"}
+    return {**data, "metadata": metadata}
+
+
+def is_unchanged(new_data: dict) -> bool:
+    """True se il file esistente contiene già gli stessi dati (timestamp escluso)."""
+    try:
+        existing = json.loads(OUTPUT_FILE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+    return isinstance(existing, dict) and without_timestamp(existing) == without_timestamp(new_data)
+
+
 def process_data() -> None:
     print("🚀 [1/3] Connessione ai server MASE in corso...")
     raw_weekly = fetch_json_with_retry(URL_WEEKLY)
@@ -147,13 +162,19 @@ def process_data() -> None:
         "monthly_history": monthly_history,
         "weekly_history": weekly_history,
     }
+    print("✅ [2/3] Elaborazione e validazione completate con successo!")
+    print(f"📊 Gasolio Auto: {len(weekly_history)} settimane, {len(monthly_history)} mesi, {len(annual_history)} medie annuali.")
+
+    # Evita commit e deploy inutili: se i dati MASE non sono cambiati, il file resta intatto.
+    if is_unchanged(output_data):
+        print("ℹ️ [3/3] Nessun dato nuovo rispetto al file esistente: salvataggio saltato.")
+        return
+
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     temporary_file = OUTPUT_FILE.with_suffix(".tmp")
     temporary_file.write_text(json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary_file.replace(OUTPUT_FILE)
 
-    print("✅ [2/3] Elaborazione e validazione completate con successo!")
-    print(f"📊 Gasolio Auto: {len(weekly_history)} settimane, {len(monthly_history)} mesi, {len(annual_history)} medie annuali.")
     print(f"💾 [3/3] File salvato in: {OUTPUT_FILE.resolve()}")
 
 
