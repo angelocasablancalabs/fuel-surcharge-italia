@@ -18,11 +18,20 @@ on:
     # Ore 07:18 e 08:18 UTC (= 09:18 e 10:18 CEST / 08:18 e 09:18 CET)
     - cron: '18 7,8 * * 3'
 
-  # Consente l'avvio manuale immediato con 1 click
+  # Consente l'avvio manuale immediato con 1 click.
+  # È anche il canale principale: cron-job.org lo richiama via API ogni martedì
+  # (i cron qui sopra restano come riserva, GitHub ne salta molti).
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write # necessario per avviare il deploy con `gh workflow run`
+
+# Un solo aggiornamento alla volta: evita che un avvio GitHub e uno esterno
+# si accavallino sul push dello stesso file.
+concurrency:
+  group: update-mase-data
+  cancel-in-progress: false
 
 jobs:
   update-mase-data:
@@ -30,12 +39,12 @@ jobs:
 
     steps:
       - name: 📥 Scarica il repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: main
 
       - name: 🐍 Configura Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
@@ -44,6 +53,8 @@ jobs:
           python fetch_data.py
 
       - name: 💾 Salva i dati se modificati
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -59,4 +70,9 @@ jobs:
             git pull --rebase origin main
             git push origin main
             echo "✅ Nuovi dati MASE registrati e inviati con successo!"
+
+            # Un push fatto con GITHUB_TOKEN non attiva il trigger `push` del deploy:
+            # lo avviamo esplicitamente, e solo quando ci sono dati nuovi.
+            gh workflow run deploy.yml --ref main
+            echo "🚀 Deploy su GitHub Pages avviato."
           fi
